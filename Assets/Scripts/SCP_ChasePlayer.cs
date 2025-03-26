@@ -3,11 +3,11 @@ using UnityEngine;
 public class SCP_ChasePlayerSimple : MonoBehaviour
 {
     public float detectionRadius = 30f;           // How far SCP-096 can detect the player
-    public float moveSpeed = 10f;                 // Sprinting speed of SCP-096
-    public float sprintDistance = 1.5f;           // How close SCP-096 should get before attacking
+    public float moveSpeed = 12f;                 // Sprinting speed of SCP-096 (Increased for better chase)
+    public float sprintDistance = 1.5f;           // Distance at which SCP-096 catches the player
     public Animator animator;                     // Reference to Animator component
     public AudioSource scpScreamAudio;            // Audio source to play SCP scream sound
-    public GameObject gameOverScreen;             // Reference to Game Over UI Screen
+    public GameObject gameOverScreen;             // Reference to Game Over UI Screen (World Space Canvas)
 
     private bool isProvoked = false;
     private Transform player;
@@ -40,7 +40,7 @@ public class SCP_ChasePlayerSimple : MonoBehaviour
                 // Face the player while chasing
                 Vector3 direction = (player.position - transform.position).normalized;
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 8f);
 
                 // Move towards the player
                 transform.position += direction * moveSpeed * Time.deltaTime;
@@ -60,7 +60,7 @@ public class SCP_ChasePlayerSimple : MonoBehaviour
     {
         if (isProvoked) return;
 
-        if (collision.gameObject.CompareTag("Throwable") || 
+        if (collision.gameObject.CompareTag("Throwable") ||
             collision.gameObject.layer == LayerMask.NameToLayer("Throwable"))
         {
             Debug.Log("SCP-096 has been provoked by a Throwable Object!");
@@ -80,9 +80,16 @@ public class SCP_ChasePlayerSimple : MonoBehaviour
         animator.SetFloat("Speed", 0.0f);
 
         if (gameOverScreen != null)
+        {
             gameOverScreen.SetActive(true);
 
-        // Optionally, stop the game or restart
+            // Position the Game Over Screen in front of the player's face
+            Transform playerHead = GameObject.FindObjectOfType<Unity.XR.CoreUtils.XROrigin>().Camera.transform;
+            gameOverScreen.transform.position = playerHead.position + playerHead.forward * 2f;
+            gameOverScreen.transform.LookAt(playerHead);
+            gameOverScreen.transform.Rotate(0, 180f, 0);
+        }
+
         Time.timeScale = 0f; // Freeze the game
     }
 }
